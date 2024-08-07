@@ -1,0 +1,26 @@
+{
+  "name": "uc-integration-globalcache",
+  "version": "0.1.0",
+  "description": "GlobalCache integration for Unfolded Circle Remotes",
+  "main": "src/driver.js",
+  "scripts": {
+    "format": "prettier --write \"./{src,test}/**/*.js\"",
+    "lint": "prettier --check \"./{src,test}/**/*.js\" && eslint --ext .js ./src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "author": "Unfolded Circle",
+  "license": "ISC",
+  "dependencies": {
+    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#18e552698c14eca05347f0e666ff11dc56b94e1e",
+    "gc-unified-lib": "git+https://github.com/zehnm/gc-unified-lib.git#feat/multi-instance"
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "9.1.0",
+    "eslint-config-semistandard": "^17.0.0",
+    "eslint-plugin-prettier": "5.2.1",
+    "eslint-plugin-promise": "^6.6.0"
+  }
+}

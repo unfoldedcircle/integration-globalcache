@@ -1,0 +1,39 @@
+{
+	"driver_id": "uc_globalcache",
+	"version": "0.1.0",
+	"min_core_api": "0.20.0",
+	"name": { "en": "Global Caché IR products" },
+	"icon": "uc:integration",
+	"description": {
+		"en": "Use Global Caché devices with Remote Two to send IR commands."
+	},
+	"developer": {
+		"name": "Unfolded Circle ApS",
+		"email": "hello@unfoldedcircle.com",
+		"url": "https://www.unfoldedcircle.com"
+	},
+	"home_page": "https://www.unfoldedcircle.com",
+	"setup_data_schema": {
+		"title": {
+			"en": "Integration setup",
+			"de": "Integrationssetup"
+		},
+		"settings": [
+			{
+				"id": "info",
+				"label": {
+					"en": "Setup process",
+					"de": "Setup Fortschritt"
+				},
+				"field": {
+					"label": {
+						"value": {
+							"en": "The setup process will search for Global Caché devices on your network. Only IR sending devices are currently supported. The device(s) must be on the same network as the remote for the auto-discovery to work."
+						}
+					}
+				}
+			}
+		]
+	},
+	"release_date": "2024-08-05"
+}
