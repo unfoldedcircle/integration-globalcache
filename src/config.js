@@ -8,6 +8,7 @@
 import fs from "fs";
 import path from "path";
 import uc from "uc-integration-api";
+import { IrPortMode } from "gc-unified-lib/src/models.js";
 
 const CFG_FILENAME = "gc_config.json";
 
@@ -58,17 +59,46 @@ class GcDevice {
     const entities = [];
 
     for (const port of this.irPorts) {
-      // FIXME create sensor entities just for testing!
-      const sensor = new uc.Entities.Sensor(
-        this._idForPort(port),
-        this.name + " " + port.name,
-        [],
-        new Map([
-          [uc.Entities.Sensor.ATTRIBUTES.STATE, "ON"],
-          [uc.Entities.Sensor.ATTRIBUTES.VALUE, "foobar"]
-        ])
-      );
-      entities.push(sensor);
+      switch (port.mode) {
+        case IrPortMode.IR:
+        case IrPortMode.BL2_BLASTER:
+        case IrPortMode.IR_BLASTER:
+        case IrPortMode.IR_NOCARRIER:
+        case IrPortMode.IRTRIPORT:
+        case IrPortMode.IRTRIPORT_BLASTER: {
+          // TODO
+          // FIXME create button entities just for testing!
+          const button = new uc.Entities.Button(this._idForPort(port), this.name + " " + port.name);
+          entities.push(button);
+          break;
+        }
+        case IrPortMode.SENSOR:
+        case IrPortMode.SENSOR_NOTIFY: {
+          // TODO polling with getstate
+          const sensor = new uc.Entities.Sensor(
+            this._idForPort(port),
+            this.name + " " + port.name,
+            new Map([
+              [uc.Entities.Sensor.ATTRIBUTES.STATE, uc.Entities.Sensor.STATES.ON],
+              [uc.Entities.Sensor.ATTRIBUTES.VALUE, "TODO polling with getstate"]
+            ])
+          );
+          entities.push(sensor);
+          break;
+        }
+        // case IrPortMode.SERIAL:
+        //   // TODO
+        //   break;
+        // case IrPortMode.RECEIVER:
+        //   // TODO
+        //   break;
+        // case IrPortMode.LED_LIGHTING:
+        //   // TODO no information found about this mode!
+        //   break;
+        default:
+          console.debug("[%s] %s not supported", this.id, port.name);
+          continue;
+      }
     }
 
     return entities;

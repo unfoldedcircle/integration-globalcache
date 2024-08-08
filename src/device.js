@@ -5,8 +5,19 @@
  * @license Mozilla Public License Version 2.0, see LICENSE for more details.
  */
 import { UnifiedClient } from "gc-unified-lib";
+import EventEmitter from "events";
 
-class GlobalCacheDevice {
+const DEVICE_STATES = {
+  ONLINE: "ONLINE",
+  IDLE: "IDLE",
+  OFFLINE: "OFFLINE"
+};
+
+const DEVICE_EVENTS = {
+  STATE_CHANGED: "STATE_CHANGED"
+};
+
+class GlobalCacheDevice extends EventEmitter {
   #cfg;
   #client;
   #connected = false;
@@ -16,6 +27,7 @@ class GlobalCacheDevice {
    * @param {GcDevice} deviceCfg
    */
   constructor(deviceCfg) {
+    super();
     this.#cfg = deviceCfg;
     this.#client = new UnifiedClient();
 
@@ -54,12 +66,20 @@ class GlobalCacheDevice {
     this.#connected = true;
     //
     console.info("[%s] connected", this.#cfg.id);
+    this.emit(DEVICE_EVENTS.STATE_CHANGED, {
+      id: this.#cfg.id,
+      state: DEVICE_STATES.ONLINE
+    });
   }
 
   _onClosed() {
     this.#connected = false;
     //
     console.info("[%s] disconnected", this.#cfg.id);
+    this.emit(DEVICE_EVENTS.STATE_CHANGED, {
+      id: this.#cfg.id,
+      state: DEVICE_STATES.OFFLINE
+    });
   }
 
   _onError(err) {
@@ -68,4 +88,4 @@ class GlobalCacheDevice {
   }
 }
 
-export { GlobalCacheDevice };
+export { GlobalCacheDevice, DEVICE_EVENTS, DEVICE_STATES };

@@ -1,7 +1,7 @@
 {
   "name": "uc-integration-globalcache",
   "version": "0.1.0",
-  "description": "GlobalCache integration for Unfolded Circle Remotes",
+  "description": "Global Caché integration for Unfolded Circle Remotes",
   "main": "src/driver.js",
   "scripts": {
     "format": "prettier --write \"./{src,test}/**/*.js\"",
@@ -12,7 +12,7 @@
   "author": "Unfolded Circle",
   "license": "ISC",
   "dependencies": {
-    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#18e552698c14eca05347f0e666ff11dc56b94e1e",
+    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#239c0d245bf820e336f8d2ad251d5a29d284d992",
     "gc-unified-lib": "git+https://github.com/zehnm/gc-unified-lib.git#feat/multi-instance"
   },
   "devDependencies": {

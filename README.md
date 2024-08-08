@@ -1,4 +1,47 @@
+# Global Caché integration for Unfolded Circle Remotes
 
+Unfolded Circle Remote integration driver for Global Caché devices.
+
+Supported devices using the [Unified TCP API](https://www.globalcache.com/files/docs/api-gc-unifiedtcp.pdf):
+- GC-100
+- iTach
+- Flex
+- Global Connect
+
+Supported features:
+- IR sending
+
+The integration implements the UC Remote [Integration-API](https://github.com/unfoldedcircle/core-api) which
+communicates with JSON messages over WebSocket.
+
+## Usage
+### Setup
+
+- Requires Node.js v20.x (older versions not tested).
+- Install required libraries:
+
+```shell
+npm install
+```
+
+### Run
+
+Run as external integration driver: 
+```shell
+UC_CONFIG_HOME=. UC_INTEGRATION_HTTP_PORT=8079 node src/driver.js
+```
+
+The configuration file is loaded & saved from the path specified in the environment variable `UC_CONFIG_HOME`.
+
+_TODO package as a custom integration driver._
+
+## Gotchas
+
+- Don't use DHCP for Global Caché devices, since they frequently get a new IP address after power loss!
+  - Configure a static IP address to improve connectivity issues.
+- GC-100 only allows one TCP connection!
+  - iTach, Flex and Global Connect devices support 8 TCP connections.
+- GC-100 doesn't seem to support TCP keep-alive option. 
 
 ## Versioning
 
