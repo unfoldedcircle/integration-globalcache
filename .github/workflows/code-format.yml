@@ -1,0 +1,27 @@
+name: Check code formatting
+
+on:
+  push:
+    paths:
+      - '**/*.js'
+      - '.github/**/*.yml'
+      - '.eslintrc.json'
+      - '.prettierrc'
+      - 'package-lock.json'
+  pull_request:
+    branches: [ "main" ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  eslint:
+    name: Run prettier & eslint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run configured Prettier & ESLint
+        run: npm run lint
