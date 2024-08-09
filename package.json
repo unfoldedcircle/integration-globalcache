@@ -12,7 +12,7 @@
   "author": "Unfolded Circle",
   "license": "ISC",
   "dependencies": {
-    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#239c0d245bf820e336f8d2ad251d5a29d284d992",
+    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#7aa86df18e7dcab13b1cc188c575e5a2f136db35",
     "gc-unified-lib": "git+https://github.com/zehnm/gc-unified-lib.git#feat/multi-instance"
   },
   "devDependencies": {
@@ -22,5 +22,8 @@
     "eslint-config-semistandard": "^17.0.0",
     "eslint-plugin-prettier": "5.2.1",
     "eslint-plugin-promise": "^6.6.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   }
 }

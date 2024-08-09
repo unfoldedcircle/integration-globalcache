@@ -8,10 +8,9 @@
 "use strict";
 
 import uc from "uc-integration-api";
-import { discover, retrieveDeviceInfo } from "gc-unified-lib";
 import * as config from "./config.js";
-import { GcDevice, GcIrPort } from "./config.js";
 import { DEVICE_EVENTS, DEVICE_STATES, GlobalCacheDevice } from "./device.js";
+import { driverSetupHandler } from "./setup_flow.js";
 
 const configuredDevices = new Map();
 
@@ -82,134 +81,28 @@ uc.on(uc.EVENTS.UNSUBSCRIBE_ENTITIES, async (entityIds) => {
   });
 });
 
-uc.on(uc.EVENTS.ENTITY_COMMAND, async (wsHandle, entityId, entityType, cmdId, params) => {
-  console.debug(`[uc_gc] ENTITY COMMAND: ${entityId} ${entityType} ${cmdId}`);
+/**
+ * Entity command handler.
+ *
+ * Called by the integration-API if a command is sent to a configured entity.
+ *
+ * @param {uc.Entities.Entity} entity button entity
+ * @param {string} cmdId command
+ * @param {Object<string, *>} params optional command parameters
+ * @return {Promise<string>} status of the command
+ */
+async function cmdHandler(entity, cmdId, params) {
+  console.log("Got %s command request: %s", entity.id, cmdId, params || "");
 
-  await uc.acknowledgeCommand(wsHandle, uc.STATUS_CODES.SERVICE_UNAVAILABLE);
-});
-
-// TODO move driver setup functions to setup_flow.js module -> requires enhancements of the nodejs integration wrapper library
-// === DRIVER SETUP ===
-
-let discoveredDevices = [];
-
-async function discoverAndPresentResults(wsHandle) {
-  await uc.driverSetupProgress(wsHandle);
-
-  console.log("[uc_gc] Discovering devices on the network");
-  discoveredDevices = await discover(45000);
-
-  const checkBoxes = [];
-
-  discoveredDevices.forEach((item) => {
-    const id = item.get("UUID");
-    if (id === undefined) {
-      console.warn("Ignoring discovered device: missing UUID.", item);
-    } else if (config.devices.contains(id)) {
-      console.debug("Skipping found device %s: already configured", id);
-    } else {
-      checkBoxes.push({
-        field: { checkbox: { value: false } },
-        id: item.get("UUID"),
-        label: {
-          en: `${item.get("Model")} ${item.get("Revision")} (${item.get("address")})`
-        }
-      });
-    }
-  });
-
-  if (checkBoxes.length === 0) {
-    console.info("[uc_gc] Could not discover any device");
-    await uc.requestDriverSetupUserConfirmation(
-      wsHandle,
-      "No new Global Caché devices found",
-      "Please make sure that your Global Caché devices are powered on and accessible from the same network as the remote. Already configured devices are excluded from the discovery.\nClick Next to try again, or close this dialog to abort."
-    );
-    return;
+  const deviceId = _deviceIdFromEntityId(entity.id);
+  if (!deviceId) {
+    return uc.STATUS_CODES.SERVICE_NOT_FOUND;
   }
 
-  await uc.requestDriverSetupUserInput(wsHandle, "Select your Global Caché products", checkBoxes);
+  // TODO trigger command on device
+
+  return uc.STATUS_CODES.OK;
 }
-
-uc.on(uc.EVENTS.SETUP_DRIVER, async (wsHandle, setupData) => {
-  console.log(`[uc_gc] Setting up driver. Setup data: ${setupData}`);
-
-  const reconfigure = setupData.reconfigure; // FIXME provide reconfigure property in event
-
-  if (reconfigure) {
-    // TODO setup screen as in ATV & Android TV: ask what to do
-  } else {
-    // clear the config
-    // configuredDevices.clear();
-    // TODO Initial setup, make sure we have a clean configuration
-    config.devices.clear(); // triggers device instance removal
-  }
-
-  await uc.acknowledgeCommand(wsHandle);
-  console.log("[uc_gc] Acknowledged driver setup");
-
-  await discoverAndPresentResults(wsHandle);
-});
-
-uc.on(uc.EVENTS.SETUP_DRIVER_USER_CONFIRMATION, async (wsHandle) => {
-  console.log("[uc_gc] Received user confirmation for starting discovery again: sending OK");
-  await uc.acknowledgeCommand(wsHandle);
-
-  await discoverAndPresentResults(wsHandle);
-});
-
-uc.on(uc.EVENTS.SETUP_DRIVER_USER_DATA, async (wsHandle, data) => {
-  console.log("[uc_gc] Received user input for driver setup.", JSON.stringify(data));
-  await uc.acknowledgeCommand(wsHandle);
-  await uc.driverSetupProgress(wsHandle);
-
-  for (const uuid in data) {
-    // selected by user?
-    if (data[uuid] === "true") {
-      const device = discoveredDevices.get(uuid);
-      if (device === undefined) {
-        continue;
-      }
-      try {
-        const deviceInfo = await retrieveDeviceInfo(device.get("address"));
-        console.info("Device information %s:", uuid, deviceInfo);
-        /*
-        Device information GC100_000C1E01A875_GlobalCache: DeviceInfo {
-          host: '172.16.16.184',
-          port: 4998,
-          productFamily: 'GC-100',
-          model: 'GC-100-12',
-          version: '3.0-12',
-          irPorts: [
-            IrPort { module: 4, port: 1, mode: 'IR' },
-            IrPort { module: 4, port: 2, mode: 'IR' },
-            IrPort { module: 4, port: 3, mode: 'IR' },
-            IrPort { module: 5, port: 1, mode: 'IR' },
-            IrPort { module: 5, port: 2, mode: 'IR' },
-            IrPort { module: 5, port: 3, mode: 'IR' }
-          ]
-        }
-         */
-        const irPorts = [];
-        deviceInfo.irPorts.forEach((port) => {
-          irPorts.push(new GcIrPort(port.module, port.port, port.mode.toString()));
-        });
-        const gcDevice = new GcDevice(uuid, deviceInfo.name, deviceInfo.address, irPorts);
-        config.devices.addOrUpdate(gcDevice);
-      } catch (e) {
-        console.error("Failed to retrieve device information for %s.", uuid, e);
-        await uc.driverSetupError(wsHandle, e.toString());
-        return;
-      }
-    }
-  }
-
-  await uc.driverSetupComplete(wsHandle);
-});
-
-// === END DRIVER SETUP ===
-
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 function _deviceIdFromEntityId(entityId) {
   const index = entityId.lastIndexOf(":");
@@ -314,6 +207,7 @@ function _registerAvailableEntities(device) {
     if (uc.availableEntities.contains(entity.id)) {
       uc.availableEntities.removeEntity(entity.id);
     }
+    entity.setCmdHandler(cmdHandler);
     uc.availableEntities.addEntity(entity);
   }
 
@@ -333,7 +227,7 @@ function onDeviceAdded(device) {
  * Handle a removed device in the configuration.
  * @param {GcDevice} device
  */
-function _onDeviceRemoved(device) {
+function onDeviceRemoved(device) {
   if (device === null) {
     console.debug("Configuration cleared, disconnecting & removing all configured device instances");
     for (const configured in configuredDevices) {
@@ -343,7 +237,7 @@ function _onDeviceRemoved(device) {
     configuredDevices.clear();
     uc.configuredEntities.clear();
     uc.availableEntities.clear();
-  } else if (device.id in configuredDevices) {
+  } else if (configuredDevices.has(device.id)) {
     console.debug("Disconnecting from removed device %s", device.id);
     const configured = configuredDevices.get(device.id);
     configuredDevices.delete(configured.id);
@@ -354,7 +248,7 @@ function _onDeviceRemoved(device) {
     configured.removeAllListeners();
 
     const ids = device.entityIds();
-    for (const entityId in ids) {
+    for (const entityId of ids) {
       uc.configuredEntities.removeEntity(entityId);
       uc.availableEntities.removeEntity(entityId);
     }
@@ -363,8 +257,8 @@ function _onDeviceRemoved(device) {
 
 // ***** Main function ******
 async function main() {
-  // load paired devices
-  config.devices.init(uc.configDirPath, onDeviceAdded, _onDeviceRemoved);
+  // load configured devices
+  config.devices.init(uc.configDirPath, onDeviceAdded, onDeviceRemoved);
 
   // Note: device will be moved to configured devices with the subscribe_events request!
   // This will also start the device connection.
@@ -372,7 +266,7 @@ async function main() {
     _addConfiguredDevice(device, false);
   });
 
-  uc.init("driver.json");
+  uc.init("driver.json", driverSetupHandler);
 }
 
 // Execute the main function if the module is run directly
