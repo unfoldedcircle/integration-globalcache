@@ -13,6 +13,8 @@ import { IrPortMode } from "gc-unified-lib/src/models.js";
 const CFG_FILENAME = "gc_config.json";
 
 class GcDevice {
+  #entityIds = [];
+
   /**
    * Global Caché device configuration.
    * @param {string} id Unique id of the device.
@@ -45,18 +47,21 @@ class GcDevice {
     return parseInt(this.address.substring(pos + 1), 10);
   }
 
+  /**
+   * Get all created entity identifiers.
+   *
+   * Attention: `entities()` has to be called before, otherwise this will return an empty array!
+   * @return {[string]}
+   */
   entityIds() {
-    const ids = [];
-
-    for (const port of this.irPorts) {
-      ids.push(this._idForPort(port));
-    }
-
-    return ids;
+    return this.#entityIds;
   }
 
   entities() {
     const entities = [];
+
+    let remoteEntity;
+    const irOutputPorts = [];
 
     for (const port of this.irPorts) {
       switch (port.mode) {
@@ -66,10 +71,17 @@ class GcDevice {
         case IrPortMode.IR_NOCARRIER:
         case IrPortMode.IRTRIPORT:
         case IrPortMode.IRTRIPORT_BLASTER: {
-          // TODO
-          // FIXME create button entities just for testing!
-          const button = new uc.Entities.Button(this._idForPort(port), this.name + " " + port.name);
-          entities.push(button);
+          if (!remoteEntity) {
+            // TODO use remote-entity once defined in integration library, MediaPlayer is just for testing!
+            remoteEntity = new uc.Entities.MediaPlayer(
+              this._idForIR(),
+              this.name + " IR output(s)",
+              [uc.Entities.MediaPlayer.FEATURES.DPAD, uc.Entities.MediaPlayer.FEATURES.VOLUME_UP_DOWN],
+              new Map([[uc.Entities.MediaPlayer.ATTRIBUTES.STATE, uc.Entities.Sensor.STATES.UNKNOWN]]),
+              uc.Entities.MediaPlayer.DEVICECLASSES.STREAMING_BOX
+            );
+          }
+          irOutputPorts.push(port.name);
           break;
         }
         case IrPortMode.SENSOR:
@@ -101,7 +113,25 @@ class GcDevice {
       }
     }
 
+    if (remoteEntity) {
+      // TODO just for testing until we have remote-entity in integration library
+      // TODO add port as output port in remote-entity IR-options
+      const options = {};
+      options[uc.Entities.MediaPlayer.OPTIONS.SIMPLE_COMMANDS] = irOutputPorts;
+      remoteEntity.options = options;
+      entities.push(remoteEntity);
+    }
+
+    this.#entityIds.length = 0;
+    for (const entity of entities) {
+      this.#entityIds.push(entity.id);
+    }
+
     return entities;
+  }
+
+  _idForIR() {
+    return `${this.id}:IR`;
   }
 
   _idForPort(port) {

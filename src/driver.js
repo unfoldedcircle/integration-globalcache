@@ -112,6 +112,25 @@ async function cmdHandler(entity, cmdId, params) {
   }
 
   // TODO trigger command on device
+  if (entity.entity_type === uc.Entities.TYPES.MEDIA_PLAYER) {
+    // FOR TESTING ONLY
+    switch (cmdId) {
+      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_LEFT:
+        break;
+      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_RIGHT:
+        break;
+      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_UP:
+        break;
+      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_DOWN:
+        break;
+      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_ENTER:
+        break;
+      case uc.Entities.MediaPlayer.COMMANDS.VOLUME_UP:
+        break;
+      case uc.Entities.MediaPlayer.COMMANDS.VOLUME_DOWN:
+        break;
+    }
+  }
 
   return uc.STATUS_CODES.OK;
 }
@@ -166,6 +185,9 @@ function _addConfiguredDevice(device, connect = true) {
       const entityIds = configured.entityIds();
       for (const entityId of entityIds) {
         const entity = uc.configuredEntities.getEntity(entityId);
+        if (!entity) {
+          continue;
+        }
         // adjust state based on entity type
         if (newState === "ON") {
           switch (entity.entity_type) {

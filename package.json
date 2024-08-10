@@ -14,7 +14,7 @@
   "dependencies": {
     "gc-unified-lib": "git+https://github.com/zehnm/gc-unified-lib.git#feat/multi-instance",
     "i18n": "^0.15.1",
-    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#7aa86df18e7dcab13b1cc188c575e5a2f136db35"
+    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#refactor/setup-flow"
   },
   "devDependencies": {
     "ava": "^6.1.3",
