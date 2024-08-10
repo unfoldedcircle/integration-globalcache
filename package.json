@@ -5,25 +5,27 @@
   "main": "src/driver.js",
   "scripts": {
     "format": "prettier --write \"./{src,test}/**/*.js\"",
-    "lint": "prettier --check \"./{src,test}/**/*.js\" && eslint --ext .js ./src",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "lint": "prettier --check \"./{src,test}/**/*.js\" && eslint . --ext .js",
+    "test": "ava"
   },
   "type": "module",
   "author": "Unfolded Circle",
   "license": "ISC",
   "dependencies": {
-    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#7aa86df18e7dcab13b1cc188c575e5a2f136db35",
-    "gc-unified-lib": "git+https://github.com/zehnm/gc-unified-lib.git#feat/multi-instance"
+    "gc-unified-lib": "git+https://github.com/zehnm/gc-unified-lib.git#feat/multi-instance",
+    "i18n": "^0.15.1",
+    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#7aa86df18e7dcab13b1cc188c575e5a2f136db35"
   },
   "devDependencies": {
-    "prettier": "^3.3.3",
+    "ava": "^6.1.3",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-config-semistandard": "^17.0.0",
     "eslint-plugin-prettier": "5.2.1",
-    "eslint-plugin-promise": "^6.6.0"
+    "eslint-plugin-promise": "^6.6.0",
+    "prettier": "^3.3.3"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20.11.0"
   }
 }

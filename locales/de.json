@@ -1,0 +1,22 @@
+{
+	"setup": {
+		"configuration": {
+			"title": "Konfigurations-Modus",
+			"add": "Neues Gerät hinzufügen",
+			"remove": "Selektiertes Gerät löschen",
+			"reset": "Konfiguration zurücksetzen und neu konfigurieren",
+			"configured_devices": "Konfigurierte Geräte",
+			"action": "Aktion"
+		},
+		"discovery": {
+			"title": "Setup Modus",
+			"info": "Suche oder Verbinde auf Global Caché Gerät",
+			"description": "Leer lassen, um automatische Erkennung zu verwenden und auf _Weiter_ klicken. Das Gerät muss sich im gleichen Netzwerk wie die Fernbedienung befinden.",
+			"address": "IP-Adresse (manuelle Konfiguration)"
+		},
+		"discovery_failed": {
+			"title": "Keine neuen Global Caché Geräte gefunden",
+			"header": "Vergewissere dich, dass die Global Caché-Geräte eingeschaltet und über das gleiche Netzwerk wie die Fernbedienung erreichbar sind. Bereits konfigurierte Geräte werden von der Erkennung ausgeschlossen.\nKlicke auf Weiter, um es erneut zu versuchen, oder schließe diesen Dialog, um abzubrechen."
+		}
+	}
+}

@@ -1,0 +1,25 @@
+name: Run unit tests
+
+on:
+  push:
+    paths:
+      - '**/*.js'
+      - '.github/**/*.yml'
+      - 'package-lock.json'
+  pull_request:
+    branches: [ "main" ]
+    types: [opened, synchronize, reopened]
+
+jobs:
+  eslint:
+    name: Run tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run configured tests
+        run: npm run test

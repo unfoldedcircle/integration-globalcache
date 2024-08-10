@@ -17,7 +17,7 @@ communicates with JSON messages over WebSocket.
 ## Usage
 ### Setup
 
-- Requires Node.js v20.x (older versions not tested).
+- Requires Node.js v20.11 or newer.
 - Install required libraries:
 
 ```shell

@@ -1,0 +1,22 @@
+{
+	"setup": {
+		"configuration": {
+			"title": "Configuration mode",
+			"add": "Add a new device",
+			"remove": "Delete selected device",
+			"reset": "Reset configuration and reconfigure",
+			"configured_devices": "Configured devices",
+			"action": "Action"
+		},
+		"discovery": {
+			"title": "Setup mode",
+			"info": "Discover or connect to Global Caché device",
+			"description": "Leave blank to use auto-discovery and click _Next_. The device must be on the same network as the remote.",
+			"address": "IP address (manual configuration)"
+		},
+		"discovery_failed": {
+			"title": "No new Global Caché devices found",
+			"header": "Please make sure that your Global Caché devices are powered on and accessible from the same network as the remote. Already configured devices are excluded from the discovery.\nClick Next to try again, or close this dialog to abort."
+		}
+	}
+}

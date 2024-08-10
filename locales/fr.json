@@ -1,0 +1,22 @@
+{
+	"setup": {
+		"configuration": {
+			"title": "Mode configuration",
+			"add": "Ajouter un nouvel appareil",
+			"remove": "Supprimer l'appareil sélectionné",
+			"reset": "Réinitialiser la configuration et reconfigurer",
+			"configured_devices": "Appareils configurés",
+			"action": "Action"
+		},
+		"discovery": {
+			"title": "Setup mode",
+			"info": "Découvrir ou connexion à l'appareil Global Caché",
+			"description": "Laissez le champ vide pour utiliser la découverte automatique et cliquez sur _Suivant_. L'appareil doit être sur le même réseau que la télécommande",
+			"address": "Adresse IP (configuration manuel)"
+		},
+		"discovery_failed": {
+			"title": "Aucun nouvel appareil Global Caché trouvé",
+			"header": "Veuillez vous assurer que vos appareils Global Caché sont sous tension et accessibles depuis le même réseau que la télécommande. Les appareils déjà configurés sont exclus de la découverte.\nCliquez sur Suivant pour réessayer, ou fermez cette boîte de dialogue pour abandonner."
+		}
+	}
+}

@@ -11,6 +11,7 @@ import uc from "uc-integration-api";
 import { discover, retrieveDeviceInfo } from "gc-unified-lib";
 import { GcDevice, GcIrPort } from "./config.js";
 import * as config from "./config.js";
+import { i18all } from "./util.js";
 
 /**
  * Enumeration of setup steps to keep track of user data responses.
@@ -27,40 +28,6 @@ let discoveredDevices = new Map();
 let setupStep = SetupSteps.INIT;
 let cfgAddDevice = false;
 let manualAddress = false;
-const userInputDiscovery = new uc.setup.RequestUserInput({ en: "Setup mode", de: "Setup Modus" }, [
-  {
-    id: "info",
-    label: {
-      en: "Discover or connect to Global Caché device",
-      de: "Suche oder Verbinde auf Global Caché Gerät",
-      fr: "Découvrir ou connexion à l'appareil Global Caché"
-    },
-    field: {
-      label: {
-        value: {
-          en:
-            "Leave blank to use auto-discovery and click _Next_." +
-            "The device must be on the same network as the remote.",
-          de:
-            "Leer lassen, um automatische Erkennung zu verwenden und auf _Weiter_ klicken." +
-            "Das Gerät muss sich im gleichen Netzwerk wie die Fernbedienung befinden.",
-          fr:
-            "Laissez le champ vide pour utiliser la découverte automatique et cliquez sur _Suivant_." +
-            "L'appareil doit être sur le même réseau que la télécommande"
-        }
-      }
-    }
-  },
-  {
-    field: { text: { value: "" } },
-    id: "address",
-    label: {
-      en: "IP address (same network only)",
-      de: "IP-Adresse (nur im gleichen Netzwerk)",
-      fr: "Adresse IP (seulement dans le même réseau)"
-    }
-  }
-]);
 
 /**
  * Dispatch driver setup requests to corresponding handlers.
@@ -127,11 +94,7 @@ async function handleDriverSetup(msg) {
     const dropdownActions = [
       {
         id: "add",
-        label: {
-          en: "Add a new device",
-          de: "Neues Gerät hinzufügen",
-          fr: "Ajouter un nouvel appareil"
-        }
+        label: i18all("setup.configuration.add")
       }
     ];
 
@@ -139,43 +102,27 @@ async function handleDriverSetup(msg) {
     if (dropdownDevices.length > 0) {
       dropdownActions.push({
         id: "remove",
-        label: {
-          en: "Delete selected device",
-          de: "Selektiertes Gerät löschen",
-          fr: "Supprimer l'appareil sélectionné"
-        }
+        label: i18all("setup.configuration.remove")
       });
       dropdownActions.push({
         id: "reset",
-        label: {
-          en: "Reset configuration and reconfigure",
-          de: "Konfiguration zurücksetzen und neu konfigurieren",
-          fr: "Réinitialiser la configuration et reconfigurer"
-        }
+        label: i18all("setup.configuration.reset")
       });
     } else {
       // dummy entry if no devices are available
       dropdownDevices.push({ id: "", label: { en: "---" } });
     }
 
-    return new uc.setup.RequestUserInput({ en: "Configuration mode", de: "Konfigurations-Modus" }, [
+    return new uc.setup.RequestUserInput(i18all("setup.configuration.title"), [
       {
         field: { dropdown: { value: dropdownDevices[0].id, items: dropdownDevices } },
         id: "choice",
-        label: {
-          en: "Configured devices",
-          de: "Konfigurierte Geräte",
-          fr: "Appareils configurés"
-        }
+        label: i18all("setup.configuration.configured_devices")
       },
       {
         field: { dropdown: { value: dropdownActions[0].id, items: dropdownActions } },
         id: "action",
-        label: {
-          en: "Action",
-          de: "Aktion",
-          fr: "Appareils configurés"
-        }
+        label: i18all("setup.configuration.action")
       }
     ]);
   } else {
@@ -227,6 +174,24 @@ async function handleConfigurationMode(msg) {
   }
 
   setupStep = SetupSteps.DISCOVER;
+
+  const userInputDiscovery = new uc.setup.RequestUserInput(i18all("setup.discovery.title"), [
+    {
+      id: "info",
+      label: i18all("setup.discovery.info"),
+      field: {
+        label: {
+          value: i18all("setup.discovery.description")
+        }
+      }
+    },
+    {
+      field: { text: { value: "" } },
+      id: "address",
+      label: i18all("setup.discovery.address")
+    }
+  ]);
+
   return userInputDiscovery;
 }
 
@@ -296,8 +261,8 @@ async function handleDiscovery(msg) {
   if (checkBoxes.length === 0) {
     console.info("[uc_gc] Could not discover any new devices");
     return new uc.setup.RequestUserConfirmation(
-      "No new Global Caché devices found",
-      "Please make sure that your Global Caché devices are powered on and accessible from the same network as the remote. Already configured devices are excluded from the discovery.\nClick Next to try again, or close this dialog to abort."
+      i18all("setup.discovery_failed.title"),
+      i18all("setup.discovery_failed.header")
     );
   }
 

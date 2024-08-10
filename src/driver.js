@@ -8,9 +8,21 @@
 "use strict";
 
 import uc from "uc-integration-api";
+import i18n from "i18n";
+import path from "path";
 import * as config from "./config.js";
 import { DEVICE_EVENTS, DEVICE_STATES, GlobalCacheDevice } from "./device.js";
 import { driverSetupHandler } from "./setup_flow.js";
+
+// Node.js 20.11 / 21.2
+const __dirname = import.meta.dirname;
+
+i18n.configure({
+  locales: ["en", "de", "fr"],
+  defaultLocale: "en",
+  directory: path.join(__dirname, "..", "locales"),
+  objectNotation: true
+});
 
 const configuredDevices = new Map();
 
