@@ -60,7 +60,7 @@ class GcDevice {
   entities() {
     const entities = [];
 
-    let remoteEntity;
+    let emitterEntity;
     const irOutputPorts = [];
 
     for (const port of this.irPorts) {
@@ -71,17 +71,19 @@ class GcDevice {
         case IrPortMode.IR_NOCARRIER:
         case IrPortMode.IRTRIPORT:
         case IrPortMode.IRTRIPORT_BLASTER: {
-          if (!remoteEntity) {
-            // TODO use remote-entity once defined in integration library, MediaPlayer is just for testing!
-            remoteEntity = new uc.Entities.MediaPlayer(
+          if (!emitterEntity) {
+            emitterEntity = new uc.Entities.Entity(
               this._idForIR(),
-              this.name + " IR output(s)",
-              [uc.Entities.MediaPlayer.FEATURES.DPAD, uc.Entities.MediaPlayer.FEATURES.VOLUME_UP_DOWN],
-              new Map([[uc.Entities.MediaPlayer.ATTRIBUTES.STATE, uc.Entities.Sensor.STATES.UNKNOWN]]),
-              uc.Entities.MediaPlayer.DEVICECLASSES.STREAMING_BOX
+              this.name + " IR emitter",
+              "ir_emitter",
+              [],
+              new Map([[uc.Entities.Remote.ATTRIBUTES.STATE, uc.Entities.Remote.STATES.UNKNOWN]]),
+              undefined,
+              null,
+              undefined
             );
           }
-          irOutputPorts.push(port.name);
+          irOutputPorts.push({ id: `${port.module}:${port.port}`, name: port.name });
           break;
         }
         case IrPortMode.SENSOR:
@@ -113,13 +115,13 @@ class GcDevice {
       }
     }
 
-    if (remoteEntity) {
-      // TODO just for testing until we have remote-entity in integration library
+    if (emitterEntity) {
       // TODO add port as output port in remote-entity IR-options
       const options = {};
-      options[uc.Entities.MediaPlayer.OPTIONS.SIMPLE_COMMANDS] = irOutputPorts;
-      remoteEntity.options = options;
-      entities.push(remoteEntity);
+      options.ports = irOutputPorts;
+      options.ir_formats = ["SENDIR"];
+      emitterEntity.options = options;
+      entities.push(emitterEntity);
     }
 
     this.#entityIds.length = 0;

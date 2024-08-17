@@ -104,32 +104,32 @@ uc.on(uc.EVENTS.UNSUBSCRIBE_ENTITIES, async (entityIds) => {
  * @return {Promise<string>} status of the command
  */
 async function cmdHandler(entity, cmdId, params) {
-  console.log("Got %s command request: %s", entity.id, cmdId, params || "");
-
   const deviceId = _deviceIdFromEntityId(entity.id);
   if (!deviceId) {
     return uc.STATUS_CODES.SERVICE_NOT_FOUND;
   }
-
-  // TODO trigger command on device
-  if (entity.entity_type === uc.Entities.TYPES.MEDIA_PLAYER) {
-    // FOR TESTING ONLY
+  const device = configuredDevices.get(deviceId);
+  if (!device) {
+    return uc.STATUS_CODES.SERVICE_NOT_FOUND;
+  }
+  if (entity.entity_type === "ir_emitter") {
     switch (cmdId) {
-      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_LEFT:
+      case "send_ir":
+        device.sendPronto(params?.port || "1:1", params.code, params.repeat).catch((reason) => {
+          console.error(reason);
+        });
         break;
-      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_RIGHT:
+      case "stop_ir":
+        device.send(`stopir,${params?.port || "1:1"}`).catch((reason) => {
+          console.error(reason);
+        });
         break;
-      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_UP:
-        break;
-      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_DOWN:
-        break;
-      case uc.Entities.MediaPlayer.COMMANDS.CURSOR_ENTER:
-        break;
-      case uc.Entities.MediaPlayer.COMMANDS.VOLUME_UP:
-        break;
-      case uc.Entities.MediaPlayer.COMMANDS.VOLUME_DOWN:
-        break;
+      default:
+        // invalid command
+        return uc.STATUS_CODES.BAD_REQUEST;
     }
+  } else {
+    return uc.STATUS_CODES.BAD_REQUEST;
   }
 
   return uc.STATUS_CODES.OK;
@@ -263,6 +263,7 @@ function onDeviceAdded(device) {
  */
 function onDeviceRemoved(device) {
   if (device === null) {
+    // TODO verify if removal works correctly! Active devices are still trying to reconnect afterwards!
     console.debug("Configuration cleared, disconnecting & removing all configured device instances");
     for (const configured in configuredDevices) {
       configured.disconnect();
@@ -274,10 +275,10 @@ function onDeviceRemoved(device) {
   } else if (configuredDevices.has(device.id)) {
     console.debug("Disconnecting from removed device %s", device.id);
     const configured = configuredDevices.get(device.id);
-    configuredDevices.delete(configured.id);
-    if (configured === undefined) {
+    if (!configured) {
       return;
     }
+    configuredDevices.delete(configured.id);
     configured.disconnect();
     configured.removeAllListeners();
 

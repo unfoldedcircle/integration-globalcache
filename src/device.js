@@ -6,6 +6,7 @@
  */
 import { UnifiedClient } from "gc-unified-lib";
 import EventEmitter from "events";
+import { convertProntoToGlobalCache } from "./util.js";
 
 const DEVICE_STATES = {
   ONLINE: "ONLINE",
@@ -19,8 +20,11 @@ const DEVICE_EVENTS = {
 
 class GlobalCacheDevice extends EventEmitter {
   #cfg;
-  #client;
+  #client = new UnifiedClient({ sendTimeout: 1000 });
   #connected = false;
+  #lastSendIrPort = "";
+  #lastSendIr = "";
+  #irId = 1;
 
   /**
    *
@@ -29,11 +33,10 @@ class GlobalCacheDevice extends EventEmitter {
   constructor(deviceCfg) {
     super();
     this.#cfg = deviceCfg;
-    this.#client = new UnifiedClient();
 
-    this.#client.on("connect", this._onConnected.bind(this));
-    this.#client.on("close", this._onClosed.bind(this));
-    this.#client.on("error", this._onError.bind(this));
+    this.#client.on("connect", this.#onConnected.bind(this));
+    this.#client.on("close", this.#onClosed.bind(this));
+    this.#client.on("error", this.#onError.bind(this));
   }
 
   get connected() {
@@ -44,11 +47,18 @@ class GlobalCacheDevice extends EventEmitter {
     if (this.#client.connected) {
       return;
     }
-    console.debug("[%s] start connection to %s", this.#cfg.id, this.#cfg.address);
+    if (!["stopped", "failed"].some((state) => this.#client.state === state)) {
+      return;
+    }
+
+    const tcpKeepAlive = !this.#cfg.name.startsWith("GC-100");
+    console.debug("[%s] start connection to %s (keepAlive=%s)", this.#cfg.id, this.#cfg.address, tcpKeepAlive);
     this.#client.connect({
       host: this.#cfg.host,
       port: this.#cfg.port,
-      reconnect: true
+      reconnect: true,
+      tcpKeepAlive,
+      tcpKeepAliveInitialDelay: 10000
     });
   }
 
@@ -58,11 +68,31 @@ class GlobalCacheDevice extends EventEmitter {
     this.#client.close({ reconnect: false });
   }
 
-  send(data) {
+  /**
+   *
+   * @param {string} data
+   * @return {*}
+   */
+  async send(data) {
+    this.#lastSendIr = "";
     return this.#client.send(data);
   }
 
-  _onConnected() {
+  async sendPronto(port, pronto, repeat) {
+    const sendIr = convertProntoToGlobalCache(pronto, repeat > 0 ? repeat : 1);
+    if (this.#lastSendIrPort !== port || this.#lastSendIr !== sendIr) {
+      this.#lastSendIrPort = port;
+      this.#lastSendIr = sendIr;
+      this.#irId += 1;
+      if (this.#irId > 65535) {
+        this.#irId = 1;
+      }
+    }
+    const msg = `sendir,${port},${this.#irId},${sendIr}`;
+    return this.#client.send(msg);
+  }
+
+  #onConnected() {
     this.#connected = true;
     //
     console.info("[%s] connected", this.#cfg.id);
@@ -72,7 +102,7 @@ class GlobalCacheDevice extends EventEmitter {
     });
   }
 
-  _onClosed() {
+  #onClosed() {
     this.#connected = false;
     //
     console.info("[%s] disconnected", this.#cfg.id);
@@ -82,7 +112,7 @@ class GlobalCacheDevice extends EventEmitter {
     });
   }
 
-  _onError(err) {
+  #onError(err) {
     //
     console.error("[%s] communication error:", this.#cfg.id, err);
   }

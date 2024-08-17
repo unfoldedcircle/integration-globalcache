@@ -38,4 +38,37 @@ function i18all(key) {
   return out;
 }
 
-export { i18all };
+/**
+ * Convert a PRONTO raw HEX string (raw: starting with 0000).
+ * @param {string} prontoHex PRONTO raw HEX string.
+ * @param {number} [repeatCount=1] optional repeat count to include in converted format.
+ * @return {string}
+ * @throws Error if the input PRONTO code is not in raw PRONTO hex format
+ */
+function convertProntoToGlobalCache(prontoHex, repeatCount = 1) {
+  const hexValues = prontoHex.split(/[ ,]/);
+
+  if (parseInt(hexValues[0]) !== 0) {
+    throw new Error("Only raw PRONTO Hex codes are supported");
+  }
+
+  // Skip the first value (format)
+  hexValues.shift();
+
+  // Parse the remaining durations
+  const durations = hexValues.map((hexValue) => parseInt(hexValue, 16));
+
+  // Calculate the frequency
+  const frequency = Math.round(1000000 / (durations[0] * 0.241246));
+
+  // Calculate the preamble offset if there's a repeat sequence
+  let preambleOffset = 1;
+  if (durations[1] > 0 && durations[2] > 0) {
+    // PRONTO specifies length in pairs, sendir as an offset
+    preambleOffset = durations[1] * 2 + 1;
+  }
+
+  return `${frequency},${repeatCount},${preambleOffset},` + durations.slice(3).join(",");
+}
+
+export { i18all, convertProntoToGlobalCache };
