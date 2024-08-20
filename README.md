@@ -17,7 +17,10 @@ communicates with JSON messages over WebSocket.
 ## Usage
 ### Setup
 
-- Requires Node.js v20.11 or newer.
+Requirements:
+- Remote Two firmware 1.9.3 or newer with support for new IR-emitter entity.
+- Install [nvm](https://github.com/nvm-sh/nvm) (Node.js version manager) for local development
+- Node.js v20.16 or newer (older versions are not tested)
 - Install required libraries:
 
 ```shell
