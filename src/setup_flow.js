@@ -238,7 +238,7 @@ async function handleDiscovery(msg) {
 
   if (!manualAddress) {
     console.log("[uc_gc] Discovering devices on the network");
-    discoveredDevices = await discover(10000);
+    discoveredDevices = await discover(35000);
 
     discoveredDevices.forEach((item) => {
       const id = item.get("UUID");
