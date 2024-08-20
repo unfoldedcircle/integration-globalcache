@@ -7,6 +7,7 @@
 import { UnifiedClient } from "gc-unified-lib";
 import EventEmitter from "events";
 import { convertProntoToGlobalCache } from "./util.js";
+import { log } from "./loggers.js";
 
 const DEVICE_STATES = {
   ONLINE: "ONLINE",
@@ -52,7 +53,7 @@ class GlobalCacheDevice extends EventEmitter {
     }
 
     const tcpKeepAlive = !this.#cfg.name.startsWith("GC-100");
-    console.debug("[%s] start connection to %s (keepAlive=%s)", this.#cfg.id, this.#cfg.address, tcpKeepAlive);
+    log.debug("[%s] start connection to %s (keepAlive=%s)", this.#cfg.id, this.#cfg.address, tcpKeepAlive);
     this.#client.connect({
       host: this.#cfg.host,
       port: this.#cfg.port,
@@ -63,7 +64,7 @@ class GlobalCacheDevice extends EventEmitter {
   }
 
   disconnect() {
-    console.debug("[%s] disconnect", this.#cfg.id);
+    log.debug("[%s] disconnecting", this.#cfg.id);
     this.#connected = false;
     this.#client.close({ reconnect: false });
   }
@@ -94,8 +95,7 @@ class GlobalCacheDevice extends EventEmitter {
 
   #onConnected() {
     this.#connected = true;
-    //
-    console.info("[%s] connected", this.#cfg.id);
+    log.info("[%s] connected", this.#cfg.id);
     this.emit(DEVICE_EVENTS.STATE_CHANGED, {
       id: this.#cfg.id,
       state: DEVICE_STATES.ONLINE
@@ -104,8 +104,7 @@ class GlobalCacheDevice extends EventEmitter {
 
   #onClosed() {
     this.#connected = false;
-    //
-    console.info("[%s] disconnected", this.#cfg.id);
+    log.info("[%s] disconnected", this.#cfg.id);
     this.emit(DEVICE_EVENTS.STATE_CHANGED, {
       id: this.#cfg.id,
       state: DEVICE_STATES.OFFLINE
@@ -113,8 +112,7 @@ class GlobalCacheDevice extends EventEmitter {
   }
 
   #onError(err) {
-    //
-    console.error("[%s] communication error:", this.#cfg.id, err);
+    log.error("[%s] communication error:", this.#cfg.id, err);
   }
 }
 

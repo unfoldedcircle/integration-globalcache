@@ -12,6 +12,7 @@ import { discover, retrieveDeviceInfo } from "gc-unified-lib";
 import { GcDevice, GcIrPort } from "./config.js";
 import * as config from "./config.js";
 import { i18all } from "./util.js";
+import { log } from "./loggers.js";
 
 /**
  * Enumeration of setup steps to keep track of user data responses.
@@ -45,10 +46,10 @@ async function driverSetupHandler(msg) {
   }
   if (msg instanceof uc.setup.UserConfirmationResponse) {
     if (setupStep === SetupSteps.DISCOVER) {
-      console.log("[uc_gc] Received user confirmation for starting discovery again");
+      log.debug("Received user confirmation for starting discovery again");
       return await handleDiscovery(msg);
     }
-    console.error("No or invalid user confirmation response was received in step %d: %s", setupStep, msg);
+    log.error("No or invalid user confirmation response was received in step %d: %s", setupStep, msg);
   } else if (msg instanceof uc.setup.UserDataResponse) {
     if (setupStep === SetupSteps.CONFIGURATION_MODE && "action" in msg.inputValues) {
       return await handleConfigurationMode(msg);
@@ -59,9 +60,9 @@ async function driverSetupHandler(msg) {
     if (setupStep === SetupSteps.DEVICE_CHOICE) {
       return await handleUserDataResponse(msg);
     }
-    console.error("No or invalid user response was received in step %d: %s", setupStep, msg);
+    log.error("No or invalid user response was received in step %d: %s", setupStep, msg);
   } else if (msg instanceof uc.setup.AbortDriverSetup) {
-    console.info("Setup was aborted with code: %s", msg.error);
+    log.info("Setup was aborted with code: %s", msg.error);
     // TODO how to abort discovery?
     discoveredDevices.clear();
     setupStep = SetupSteps.INIT;
@@ -78,7 +79,7 @@ async function driverSetupHandler(msg) {
  * @return {Promise<uc.setup.SetupAction>} the setup action on how to continue
  */
 async function handleDriverSetup(msg) {
-  console.log("[uc_gc] Setting up driver. Setup data:", msg);
+  log.debug("Setting up driver. Setup data:", msg);
 
   if (msg.reconfigure) {
     setupStep = SetupSteps.CONFIGURATION_MODE;
@@ -159,7 +160,7 @@ async function handleConfigurationMode(msg) {
     case "remove": {
       const choice = msg.inputValues.choice;
       if (!config.devices.remove(choice)) {
-        console.warning("Could not remove device from configuration: %s", choice);
+        log.warn("Could not remove device from configuration: %s", choice);
         return new uc.setup.SetupError(uc.setup.IntegrationSetupError.OTHER);
       }
       config.devices.store();
@@ -169,7 +170,7 @@ async function handleConfigurationMode(msg) {
       config.devices.clear(); // triggers device instance removal
       break;
     default:
-      console.error("Invalid configuration action: %s", action);
+      log.error("Invalid configuration action: %s", action);
       return new uc.setup.SetupError(uc.setup.IntegrationSetupError.OTHER);
   }
 
@@ -206,7 +207,7 @@ async function handleDiscovery(msg) {
 
   if (msg instanceof uc.setup.UserDataResponse && msg.inputValues.address) {
     if (msg.inputValues.address.length > 0) {
-      console.debug("Starting manual driver setup for: %s", msg.inputValues.address);
+      log.debug("Starting manual driver setup for: %s", msg.inputValues.address);
       manualAddress = true;
       try {
         const deviceInfo = await retrieveDeviceInfo(msg.inputValues.address);
@@ -220,7 +221,7 @@ async function handleDiscovery(msg) {
           ])
         );
         if (cfgAddDevice && config.devices.contains(id)) {
-          console.debug("Skipping manual device %s: already configured", id);
+          log.debug("Skipping manual device %s: already configured", id);
         }
         checkBoxes.push({
           field: { checkbox: { value: true } },
@@ -230,22 +231,22 @@ async function handleDiscovery(msg) {
           }
         });
       } catch (e) {
-        console.warn("Failed to connect to device", e);
+        log.warn("Failed to connect to device", e);
         return new uc.setup.SetupError(uc.setup.SetupError.CONNECTION_REFUSED); // no better error at the moment :-(
       }
     }
   }
 
   if (!manualAddress) {
-    console.log("[uc_gc] Discovering devices on the network");
+    log.info("Discovering devices on the network");
     discoveredDevices = await discover(35000);
 
     discoveredDevices.forEach((item) => {
       const id = item.get("UUID");
       if (id === undefined) {
-        console.warn("Ignoring discovered device: missing UUID.", item);
+        log.warn("Ignoring discovered device: missing UUID.", item);
       } else if (cfgAddDevice && config.devices.contains(id)) {
-        console.debug("Skipping found device %s: already configured", id);
+        log.info("Skipping found device %s: already configured", id);
       } else {
         checkBoxes.push({
           field: { checkbox: { value: false } },
@@ -259,7 +260,7 @@ async function handleDiscovery(msg) {
   }
 
   if (checkBoxes.length === 0) {
-    console.info("[uc_gc] Could not discover any new devices");
+    log.info("Could not discover any new devices");
     return new uc.setup.RequestUserConfirmation(
       i18all("setup.discovery_failed.title"),
       i18all("setup.discovery_failed.header")
@@ -276,7 +277,7 @@ async function handleDiscovery(msg) {
  * @return {Promise<uc.setup.SetupAction>} the setup action on how to continue
  */
 async function handleUserDataResponse(msg) {
-  console.log("[uc_gc] Received user input for driver setup.", msg);
+  log.debug("Received user input for driver setup.", msg);
 
   for (const uuid in msg.inputValues) {
     // selected by user?
@@ -287,7 +288,7 @@ async function handleUserDataResponse(msg) {
       }
       try {
         const deviceInfo = await retrieveDeviceInfo(device.get("address"));
-        console.info("Device information %s:", uuid, deviceInfo);
+        log.info("Device information %s:", uuid, deviceInfo);
         /*
         Device information GC100_000C1E01A875_GlobalCache: DeviceInfo {
           host: '172.16.16.184',
@@ -312,7 +313,7 @@ async function handleUserDataResponse(msg) {
         const gcDevice = new GcDevice(uuid, deviceInfo.name, deviceInfo.address, irPorts);
         config.devices.addOrUpdate(gcDevice);
       } catch (e) {
-        console.error("Failed to retrieve device information for %s.", uuid, e);
+        log.error("Failed to retrieve device information for %s.", uuid, e);
         return new uc.setup.SetupError(uc.setup.SetupError.OTHER);
       }
     }

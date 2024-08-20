@@ -9,6 +9,7 @@ import fs from "fs";
 import path from "path";
 import uc from "uc-integration-api";
 import { IrPortMode } from "gc-unified-lib/src/models.js";
+import { log } from "./loggers.js";
 
 const CFG_FILENAME = "gc_config.json";
 
@@ -110,8 +111,7 @@ class GcDevice {
         //   // TODO no information found about this mode!
         //   break;
         default:
-          console.debug("[%s] %s not supported", this.id, port.name);
-          continue;
+          log.debug("[%s] %s not supported", this.id, port.name);
       }
     }
 
@@ -278,7 +278,7 @@ class Devices {
     if (fs.existsSync(this.#cfgFilePath)) {
       fs.unlink(this.#cfgFilePath, (e) => {
         if (e) {
-          console.error("Could not delete configuration file. %s", e);
+          log.error("Could not delete configuration file. %s", e);
         }
       });
     }
@@ -296,7 +296,7 @@ class Devices {
       fs.writeFileSync(this.#cfgFilePath, JSON.stringify(this.#config), "utf-8");
       return true;
     } catch (err) {
-      console.error("Cannot write the config file:", err);
+      log.error("Cannot write the config file:", err);
       return false;
     }
   }
@@ -307,14 +307,16 @@ class Devices {
    */
   load() {
     if (!fs.existsSync(this.#cfgFilePath)) {
-      console.info("No configuration file found, using empty configuration.");
+      log.info("No configuration file found, using empty configuration.");
       this.#config.length = 0;
       return false;
     }
     try {
       const json = JSON.parse(fs.readFileSync(this.#cfgFilePath, "utf8"));
-      for (const configItem of json) {
-        console.debug("config entry:", configItem);
+      if (log.debug.enabled) {
+        for (const configItem of json) {
+          log.debug("Config entry: %s", JSON.stringify(configItem));
+        }
       }
       this.#config = json.map((item) => {
         const irPorts = [];
@@ -329,7 +331,7 @@ class Devices {
       });
       return true;
     } catch (err) {
-      console.error("Cannot open the config file: %s", err);
+      log.error("Cannot open the config file: %s", err);
       return false;
     }
   }

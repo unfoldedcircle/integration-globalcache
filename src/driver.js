@@ -13,6 +13,7 @@ import path from "path";
 import * as config from "./config.js";
 import { DEVICE_EVENTS, DEVICE_STATES, GlobalCacheDevice } from "./device.js";
 import { driverSetupHandler } from "./setup_flow.js";
+import { log } from "./loggers.js";
 
 // Node.js 20.11 / 21.2
 const __dirname = import.meta.dirname;
@@ -43,7 +44,7 @@ uc.on(uc.EVENTS.DISCONNECT, async () => {
 });
 
 uc.on(uc.EVENTS.ENTER_STANDBY, async () => {
-  console.debug("[uc_gc] Going to standby.");
+  log.debug("Going to standby.");
 
   for (const key in configuredDevices) {
     configuredDevices[key].disconnect();
@@ -51,7 +52,7 @@ uc.on(uc.EVENTS.ENTER_STANDBY, async () => {
 });
 
 uc.on(uc.EVENTS.EXIT_STANDBY, async () => {
-  console.debug("[uc_gc] Came back from standby. Getting state updates.");
+  log.debug("Came back from standby. Getting state updates.");
 
   for (const key in configuredDevices) {
     configuredDevices[key].connect();
@@ -63,7 +64,7 @@ uc.on(uc.EVENTS.SUBSCRIBE_ENTITIES, async (entityIds) => {
     const entityId = entityIds[index];
     const entity = uc.configuredEntities.getEntity(entityId);
     if (entity) {
-      console.log(`[uc_gc] Subscribe: ${entityId}`);
+      log.debug(`Subscribe: ${entityId}`);
 
       const deviceId = _deviceIdFromEntityId(entityId);
       if (deviceId === undefined) {
@@ -87,7 +88,7 @@ uc.on(uc.EVENTS.SUBSCRIBE_ENTITIES, async (entityIds) => {
 
 uc.on(uc.EVENTS.UNSUBSCRIBE_ENTITIES, async (entityIds) => {
   entityIds.forEach((entityId) => {
-    console.log(`[uc_gc] Unsubscribe: ${entityId}`);
+    log.debug(`Unsubscribe: ${entityId}`);
     // TODO anything to do in unsubscribe?
     // we could check if all entities of a device are unsubscribed and then disconnect the device
   });
@@ -116,12 +117,12 @@ async function cmdHandler(entity, cmdId, params) {
     switch (cmdId) {
       case "send_ir":
         device.sendPronto(params?.port || "1:1", params.code, params.repeat).catch((reason) => {
-          console.error(reason);
+          log.error("send_ir command failed: %s", reason);
         });
         break;
       case "stop_ir":
         device.send(`stopir,${params?.port || "1:1"}`).catch((reason) => {
-          console.error(reason);
+          log.error("stopir command failed: %s", reason);
         });
         break;
       default:
@@ -157,14 +158,14 @@ function _addConfiguredDevice(device, connect = true) {
   if (existing !== undefined) {
     existing.disconnect();
   } else {
-    console.debug("Adding new Global Caché device: %s (%s) %s", device.name, device.id, device.address);
+    log.info("Adding new device: %s (%s) %s", device.name, device.id, device.address);
 
     const client = new GlobalCacheDevice(device);
 
     client.on(DEVICE_EVENTS.STATE_CHANGED, async (data) => {
       const configured = config.devices.get(data.id);
       if (configured === undefined) {
-        console.warn("Can't handle device state change '%s': device %s is no longer configured!", data.state, data.id);
+        log.warn("Can't handle device state change '%s': device %s is no longer configured!", data.state, data.id);
         return;
       }
 
@@ -178,7 +179,7 @@ function _addConfiguredDevice(device, connect = true) {
           newState = uc.Entities.Sensor.STATES.UNAVAILABLE;
           break;
         default:
-          console.warn("Unhandled device state event:", data.state);
+          log.warn("Unhandled device state event:", data.state);
           return;
       }
 
@@ -253,7 +254,7 @@ function _registerAvailableEntities(device) {
  * @param {GcDevice} device
  */
 function onDeviceAdded(device) {
-  console.debug("New device added:", device);
+  log.debug("New device added:", device);
   _addConfiguredDevice(device, false);
 }
 
@@ -264,7 +265,7 @@ function onDeviceAdded(device) {
 function onDeviceRemoved(device) {
   if (device === null) {
     // TODO verify if removal works correctly! Active devices are still trying to reconnect afterwards!
-    console.debug("Configuration cleared, disconnecting & removing all configured device instances");
+    log.info("Configuration cleared, disconnecting & removing all configured device instances");
     for (const configured in configuredDevices) {
       configured.disconnect();
       configured.removeAllListeners();
@@ -273,7 +274,7 @@ function onDeviceRemoved(device) {
     uc.configuredEntities.clear();
     uc.availableEntities.clear();
   } else if (configuredDevices.has(device.id)) {
-    console.debug("Disconnecting from removed device %s", device.id);
+    log.debug("Disconnecting from removed device %s", device.id);
     const configured = configuredDevices.get(device.id);
     if (!configured) {
       return;
@@ -290,7 +291,6 @@ function onDeviceRemoved(device) {
   }
 }
 
-// ***** Main function ******
 async function main() {
   // load configured devices
   config.devices.init(uc.configDirPath, onDeviceAdded, onDeviceRemoved);
@@ -302,6 +302,9 @@ async function main() {
   });
 
   uc.init("driver.json", driverSetupHandler);
+
+  const info = uc.getDriverVersion();
+  log.info("Global Caché integration %s started", info.version.driver);
 }
 
 // Execute the main function if the module is run directly
