@@ -1,11 +1,13 @@
 {
-	"driver_id": "uc_globalcache",
+	"driver_id": "uc_gc_driver",
 	"version": "0.1.0",
 	"min_core_api": "0.20.0",
-	"name": { "en": "Global Caché IR products" },
+	"name": { "en": "Global Caché IR devices", "de": "Global Caché IR Geräte", "fr": "Appareils IR Global Caché" },
 	"icon": "uc:integration",
 	"description": {
-		"en": "Use Global Caché devices with Remote Two to send IR commands."
+		"en": "Send IR commands with Global Caché devices.",
+		"de": "Sende IR Kommandos mit Global Caché Geräten.",
+		"fr": "Transmettre des commandes IR avec les appareils Global Caché."
 	},
 	"developer": {
 		"name": "Unfolded Circle ApS",
@@ -16,19 +18,23 @@
 	"setup_data_schema": {
 		"title": {
 			"en": "Integration setup",
-			"de": "Integrationssetup"
+			"de": "Integrationssetup",
+			"fr": "Configuration de l'intégration"
 		},
 		"settings": [
 			{
 				"id": "info",
 				"label": {
 					"en": "Setup process",
-					"de": "Setup Fortschritt"
+					"de": "Setup Fortschritt",
+					"fr": "Progrès de la configuration"
 				},
 				"field": {
 					"label": {
 						"value": {
-							"en": "The setup process will search for Global Caché devices on your network. Only IR sending devices are currently supported. The device(s) must be on the same network as the remote for the auto-discovery to work."
+							"en": "The setup process will search for Global Caché devices on your network. Only IR sending devices are currently supported. The device(s) must be on the same network as the remote for the auto-discovery to work.",
+							"de": "Bei der Einrichtung wird nach Global Caché-Geräten in deinem Netzwerk gesucht. Derzeit werden nur Geräte unterstützt, die IR-Signale senden. Das/die Gerät(e) müssen sich im selben Netzwerk befinden wie die Fernbedienung, damit die automatische Erkennung funktioniert.",
+							"fr": "Le processus d'installation recherchera les appareils Global Caché sur votre réseau. Seuls les dispositifs d'envoi IR sont actuellement pris en charge. Le ou les appareils doivent se trouver sur le même réseau que la télécommande pour que la recherche automatique fonctionne."
 						}
 					}
 				}

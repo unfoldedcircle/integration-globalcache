@@ -11,21 +11,33 @@ Supported devices using the [Unified TCP API](https://www.globalcache.com/files/
 Supported features:
 - IR sending
 
+This integration is included in the Unfolded Circle Remote firmware and no external service must be run to use
+Global Caché devices as IR emitters. A standalone service can be used for development or custom functionality.
+
 The integration implements the UC Remote [Integration-API](https://github.com/unfoldedcircle/core-api) which
 communicates with JSON messages over WebSocket.
 
-## Usage
+## Standalone usage
 ### Setup
 
 Requirements:
 - Remote Two firmware 1.9.3 or newer with support for new IR-emitter entity.
-- Install [nvm](https://github.com/nvm-sh/nvm) (Node.js version manager) for local development
-- Node.js v20.16 or newer (older versions are not tested)
+- Install [nvm](https://github.com/nvm-sh/nvm) (Node.js version manager) for local development.
+- Node.js v20.16 or newer (older versions are not tested).
 - Install required libraries:
 
 ```shell
 npm install
 ```
+
+For running a separate integration driver on your network for UC Remotes, the configuration in file
+[driver.json](driver.json) needs to be changed:
+
+- Set `driver_id` to a unique value, `uc_gc_driver` is already used for the embedded driver in the firmware.
+- Change `name` to easily identify the driver in discovery & setup with the Remote or the web-configurator.
+- Optionally add a `"port": 8090` field for the WebSocket server listening port.
+  - Default port: `9090`
+  - Also overrideable with environment variable `UC_INTEGRATION_HTTP_PORT`
 
 ### Run
 
@@ -59,8 +71,9 @@ If you only want to get errors and warnings reported:
 DEBUG=uc_gc:warn,uc_gc:error node src/driver.js
 ```
 
-The Global Caché communication library and the Unfolded Circle Integration-API library are also using the `debug` module
-for logging:
+The [Global Caché communication library](https://github.com/zehnm/gc-unified-lib) and the 
+[Unfolded Circle Integration-API library](https://github.com/unfoldedcircle/integration-node-library) are also using the
+`debug` module for logging:
 
 - [gc-unified-lib log namespaces](https://github.com/zehnm/gc-unified-lib/blob/main/README.md#logging)
   - Enable device socket message trace: `gclib:msg`
