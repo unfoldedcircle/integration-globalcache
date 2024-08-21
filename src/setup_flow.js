@@ -63,7 +63,7 @@ async function driverSetupHandler(msg) {
     log.error("No or invalid user response was received in step %d: %s", setupStep, msg);
   } else if (msg instanceof uc.setup.AbortDriverSetup) {
     log.info("Setup was aborted with code: %s", msg.error);
-    // TODO how to abort discovery?
+    // TODO abort discovery
     discoveredDevices.clear();
     setupStep = SetupSteps.INIT;
   }
@@ -90,7 +90,6 @@ async function handleDriverSetup(msg) {
       dropdownDevices.push({ id: device.id, label: { en: `${device.name} (${device.id})` } });
     });
 
-    // TODO #12 externalize language texts
     // build user actions, based on available devices
     const dropdownActions = [
       {

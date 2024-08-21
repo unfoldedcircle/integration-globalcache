@@ -87,20 +87,19 @@ class GcDevice {
           irOutputPorts.push({ id: `${port.module}:${port.port}`, name: port.name });
           break;
         }
-        case IrPortMode.SENSOR:
-        case IrPortMode.SENSOR_NOTIFY: {
-          // TODO polling with getstate
-          const sensor = new uc.Entities.Sensor(
-            this._idForPort(port),
-            this.name + " " + port.name,
-            new Map([
-              [uc.Entities.Sensor.ATTRIBUTES.STATE, uc.Entities.Sensor.STATES.ON],
-              [uc.Entities.Sensor.ATTRIBUTES.VALUE, "TODO polling with getstate"]
-            ])
-          );
-          entities.push(sensor);
-          break;
-        }
+        // case IrPortMode.SENSOR:
+        // case IrPortMode.SENSOR_NOTIFY: { // TODO is SENSOR_NOTIFY pollable?
+        //   const sensor = new uc.Entities.Sensor(
+        //     this._idForPort(port),
+        //     this.name + " " + port.name,
+        //     new Map([
+        //       [uc.Entities.Sensor.ATTRIBUTES.STATE, uc.Entities.Sensor.STATES.ON],
+        //       [uc.Entities.Sensor.ATTRIBUTES.VALUE, "TODO polling with getstate"]
+        //     ])
+        //   );
+        //   entities.push(sensor);
+        //   break;
+        // }
         // case IrPortMode.SERIAL:
         //   // TODO
         //   break;
