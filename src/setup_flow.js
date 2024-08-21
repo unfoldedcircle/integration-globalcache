@@ -246,6 +246,8 @@ async function handleDiscovery(msg) {
         log.warn("Ignoring discovered device: missing UUID.", item);
       } else if (cfgAddDevice && config.devices.contains(id)) {
         log.info("Skipping found device %s: already configured", id);
+      } else if (item.get("Make") === "Unfolded Circle") {
+        log.debug("Ignoring UC dock: %s", id);
       } else {
         checkBoxes.push({
           field: { checkbox: { value: false } },
