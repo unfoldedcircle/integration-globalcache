@@ -20,7 +20,7 @@
     "debug": "^4.3.6",
     "gc-unified-lib": "git+https://github.com/zehnm/gc-unified-lib.git",
     "i18n": "^0.15.1",
-    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git"
+    "uc-integration-api": "git+https://github.com/unfoldedcircle/integration-node-library.git#v0.1.0"
   },
   "devDependencies": {
     "ava": "^6.1.3",
