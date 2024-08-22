@@ -115,10 +115,9 @@ class GcDevice {
     }
 
     if (emitterEntity) {
-      // TODO add port as output port in remote-entity IR-options
       const options = {};
       options.ports = irOutputPorts;
-      options.ir_formats = ["SENDIR"];
+      options.ir_formats = ["PRONTO"]; // "SENDIR" not yet supported by the core
       emitterEntity.options = options;
       entities.push(emitterEntity);
     }

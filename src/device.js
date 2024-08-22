@@ -70,15 +70,27 @@ class GlobalCacheDevice extends EventEmitter {
   }
 
   /**
+   * Send a raw request message without further processing.
    *
-   * @param {string} data
-   * @return {*}
+   * @param {string} data request message
+   * @return {Promise<string, Error>} response message from device, or an Error in case of a communication error or if
+   *         the device responded with an error message.
    */
   async send(data) {
     this.#lastSendIr = "";
     return this.#client.send(data);
   }
 
+  /**
+   * Send a PRONTO IR code. The code is converted to a `sendir` message and assigned an ID, depending on if it's a new
+   * or a repeated code.
+   *
+   * @param {string} port output port
+   * @param {string} pronto PRONTO hex code
+   * @param {number} [repeat] number of repeats
+   * @return {Promise<string, Error>} response message from device, or an Error in case of a communication error or if
+   *         the device responded with an error message.
+   */
   async sendPronto(port, pronto, repeat) {
     const sendIr = convertProntoToGlobalCache(pronto, repeat > 0 ? repeat : 1);
     if (this.#lastSendIrPort !== port || this.#lastSendIr !== sendIr) {

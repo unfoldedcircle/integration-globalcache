@@ -25,38 +25,34 @@ i18n.configure({
   objectNotation: true
 });
 
+/**
+ * Configured GC devices.
+ * @type {Map<string, GlobalCacheDevice>}
+ */
 const configuredDevices = new Map();
 
 uc.on(uc.EVENTS.CONNECT, async () => {
   await uc.setDeviceState(uc.DEVICE_STATES.CONNECTED);
 
-  for (const key in configuredDevices) {
-    configuredDevices[key].connect();
-  }
+  configuredDevices.forEach((configured) => configured.connect());
 });
 
 uc.on(uc.EVENTS.DISCONNECT, async () => {
   await uc.setDeviceState(uc.DEVICE_STATES.DISCONNECTED);
 
-  for (const key in configuredDevices) {
-    configuredDevices[key].disconnect();
-  }
+  configuredDevices.forEach((configured) => configured.disconnect());
 });
 
 uc.on(uc.EVENTS.ENTER_STANDBY, async () => {
   log.debug("Going to standby.");
 
-  for (const key in configuredDevices) {
-    configuredDevices[key].disconnect();
-  }
+  configuredDevices.forEach((configured) => configured.disconnect());
 });
 
 uc.on(uc.EVENTS.EXIT_STANDBY, async () => {
   log.debug("Came back from standby. Getting state updates.");
 
-  for (const key in configuredDevices) {
-    configuredDevices[key].connect();
-  }
+  configuredDevices.forEach((configured) => configured.connect());
 });
 
 uc.on(uc.EVENTS.SUBSCRIBE_ENTITIES, async (entityIds) => {
@@ -116,7 +112,12 @@ async function cmdHandler(entity, cmdId, params) {
   if (entity.entity_type === "ir_emitter") {
     switch (cmdId) {
       case "send_ir":
-        device.sendPronto(params?.port || "1:1", params.code, params.repeat).catch((reason) => {
+        if (params.format && params.format !== "PRONTO") {
+          return uc.STATUS_CODES.BAD_REQUEST;
+        }
+        device.sendPronto(params.port || "1:1", params.code, params.repeat).catch((reason) => {
+          // TODO improve error handling. An invalid request should return BAD_REQUEST
+          //      Verify UI & core implementation: can we delay the cmd ack, or does it prevent IR-repeat?
           log.error("send_ir command failed: %s", reason);
         });
         break;
@@ -189,21 +190,6 @@ function _addConfiguredDevice(device, connect = true) {
         if (!entity) {
           continue;
         }
-        // adjust state based on entity type
-        if (newState === "ON") {
-          switch (entity.entity_type) {
-            case uc.Entities.TYPES.BUTTON:
-              newState = uc.Entities.Button.STATES.AVAILABLE;
-              break;
-            case uc.Entities.TYPES.SENSOR:
-              newState = uc.Entities.Sensor.STATES.ON;
-              break;
-            case uc.Entities.TYPES.SWITCH:
-              // TODO get current state
-              newState = uc.Entities.Switch.STATES.UNKNOWN;
-              break;
-          }
-        }
 
         if (entity?.attributes?.state === newState) {
           continue;
@@ -264,12 +250,11 @@ function onDeviceAdded(device) {
  */
 function onDeviceRemoved(device) {
   if (device === null) {
-    // TODO verify if removal works correctly! Active devices are still trying to reconnect afterwards!
     log.info("Configuration cleared, disconnecting & removing all configured device instances");
-    for (const configured in configuredDevices) {
+    configuredDevices.forEach((configured) => {
       configured.disconnect();
       configured.removeAllListeners();
-    }
+    });
     configuredDevices.clear();
     uc.configuredEntities.clear();
     uc.availableEntities.clear();
@@ -279,7 +264,7 @@ function onDeviceRemoved(device) {
     if (!configured) {
       return;
     }
-    configuredDevices.delete(configured.id);
+    configuredDevices.delete(device.id);
     configured.disconnect();
     configured.removeAllListeners();
 
