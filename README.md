@@ -11,8 +11,11 @@ Supported devices using the [Unified TCP API](https://www.globalcache.com/files/
 Supported features:
 - IR sending
 
-This integration is included in the Unfolded Circle Remote firmware and no external service must be run to use
-Global Caché devices as IR emitters. A standalone service can be used for development or custom functionality.
+Relay control and serial features are planned.
+
+This integration driver is included in the Unfolded Circle Remote firmware and does not need to be run as external
+integration to use Global Caché devices as IR emitters. A standalone driver can be used for development or custom
+functionality.
 
 The integration implements the UC Remote [Integration-API](https://github.com/unfoldedcircle/core-api) which
 communicates with JSON messages over WebSocket.

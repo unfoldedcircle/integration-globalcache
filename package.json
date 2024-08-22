@@ -2,6 +2,7 @@
   "name": "uc-integration-globalcache",
   "version": "0.1.0",
   "description": "Global Caché integration for Unfolded Circle Remotes",
+  "homepage": "https://github.com/unfoldedcircle/integration-globalcache",
   "main": "src/driver.js",
   "scripts": {
     "format": "prettier --write \"./{src,test}/**/*.js\"",
@@ -9,8 +10,12 @@
     "test": "ava"
   },
   "type": "module",
-  "author": "Unfolded Circle",
+  "author": "Unfolded Circle ApS",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/unfoldedcircle/integration-globalcache.git"
+  },
   "dependencies": {
     "debug": "^4.3.6",
     "gc-unified-lib": "git+https://github.com/zehnm/gc-unified-lib.git",
@@ -27,6 +32,7 @@
     "prettier": "^3.3.3"
   },
   "engines": {
-    "node": ">=20.11.0"
-  }
+    "node": ">=20.16.0"
+  },
+  "private": true
 }
