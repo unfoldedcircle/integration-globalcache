@@ -11,6 +11,13 @@ _Changes in the next release_
 
 ---
 
+## 0.1.1 - 2024-09-28
+### Fixed
+- Runtime error if invalid beacon message received during discovery.
+- Only return Global Cache devices in discovery.
+### Changed
+- Update packages.
+
 ## 0.1.0 - 2024-08-22
 
 Initial release for UCR beta firmware testing.
