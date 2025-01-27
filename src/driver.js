@@ -7,7 +7,7 @@
 
 "use strict";
 
-import uc from "uc-integration-api";
+import * as uc from "@unfoldedcircle/integration-api";
 import i18n from "i18n";
 import path from "path";
 import * as config from "./config.js";
@@ -17,6 +17,8 @@ import { log } from "./loggers.js";
 
 // Node.js 20.11 / 21.2
 const __dirname = import.meta.dirname;
+
+const driver = new uc.IntegrationAPI();
 
 i18n.configure({
   locales: ["en", "de", "fr"],
@@ -31,34 +33,34 @@ i18n.configure({
  */
 const configuredDevices = new Map();
 
-uc.on(uc.EVENTS.CONNECT, async () => {
-  await uc.setDeviceState(uc.DEVICE_STATES.CONNECTED);
+driver.on(uc.Events.Connect, async () => {
+  await driver.setDeviceState(uc.DeviceStates.Connected);
 
   configuredDevices.forEach((configured) => configured.connect());
 });
 
-uc.on(uc.EVENTS.DISCONNECT, async () => {
-  await uc.setDeviceState(uc.DEVICE_STATES.DISCONNECTED);
+driver.on(uc.Events.Disconnect, async () => {
+  await driver.setDeviceState(uc.DeviceStates.Disconnected);
 
   configuredDevices.forEach((configured) => configured.disconnect());
 });
 
-uc.on(uc.EVENTS.ENTER_STANDBY, async () => {
+driver.on(uc.Events.EnterStandby, async () => {
   log.debug("Going to standby.");
 
   configuredDevices.forEach((configured) => configured.disconnect());
 });
 
-uc.on(uc.EVENTS.EXIT_STANDBY, async () => {
+driver.on(uc.Events.ExitStandby, async () => {
   log.debug("Came back from standby. Getting state updates.");
 
   configuredDevices.forEach((configured) => configured.connect());
 });
 
-uc.on(uc.EVENTS.SUBSCRIBE_ENTITIES, async (entityIds) => {
+driver.on(uc.Events.SubscribeEntities, async (entityIds) => {
   for (const index in entityIds) {
     const entityId = entityIds[index];
-    const entity = uc.configuredEntities.getEntity(entityId);
+    const entity = driver.getConfiguredEntities().getEntity(entityId);
     if (entity) {
       log.debug(`Subscribe: ${entityId}`);
 
@@ -82,7 +84,7 @@ uc.on(uc.EVENTS.SUBSCRIBE_ENTITIES, async (entityIds) => {
   }
 });
 
-uc.on(uc.EVENTS.UNSUBSCRIBE_ENTITIES, async (entityIds) => {
+driver.on(uc.Events.UnsubscribeEntities, async (entityIds) => {
   entityIds.forEach((entityId) => {
     log.debug(`Unsubscribe: ${entityId}`);
     // TODO anything to do in unsubscribe?
@@ -95,28 +97,28 @@ uc.on(uc.EVENTS.UNSUBSCRIBE_ENTITIES, async (entityIds) => {
  *
  * Called by the integration-API if a command is sent to a configured entity.
  *
- * @param {uc.Entities.Entity} entity button entity
+ * @param {uc.Entity} entity button entity
  * @param {string} cmdId command
  * @param {Object<string, *>} params optional command parameters
- * @return {Promise<string>} status of the command
+ * @return {Promise<uc.StatusCodes>} status of the command
  */
 async function cmdHandler(entity, cmdId, params) {
   const deviceId = _deviceIdFromEntityId(entity.id);
   if (!deviceId) {
-    return uc.STATUS_CODES.SERVICE_NOT_FOUND;
+    return uc.StatusCodes.NotFound;
   }
   const device = configuredDevices.get(deviceId);
   if (!device) {
-    return uc.STATUS_CODES.SERVICE_NOT_FOUND;
+    return uc.StatusCodes.NotFound;
   }
   if (entity.entity_type === "ir_emitter") {
     switch (cmdId) {
       case "send_ir":
         if (params.format && params.format !== "PRONTO") {
-          return uc.STATUS_CODES.BAD_REQUEST;
+          return uc.StatusCodes.BadRequest;
         }
         device.sendPronto(params.port || "1:1", params.code, params.repeat).catch((reason) => {
-          // TODO improve error handling. An invalid request should return BAD_REQUEST
+          // TODO improve error handling. An invalid request should return BadRequest
           //      Verify UI & core implementation: can we delay the cmd ack, or does it prevent IR-repeat?
           log.error("send_ir command failed: %s", reason);
         });
@@ -128,13 +130,13 @@ async function cmdHandler(entity, cmdId, params) {
         break;
       default:
         // invalid command
-        return uc.STATUS_CODES.BAD_REQUEST;
+        return uc.StatusCodes.BadRequest;
     }
   } else {
-    return uc.STATUS_CODES.BAD_REQUEST;
+    return uc.StatusCodes.BadRequest;
   }
 
-  return uc.STATUS_CODES.OK;
+  return uc.StatusCodes.Ok;
 }
 
 function _deviceIdFromEntityId(entityId) {
@@ -177,7 +179,7 @@ function _addConfiguredDevice(device, connect = true) {
           break;
         case DEVICE_STATES.OFFLINE:
           // hack: UNAVAILABLE is a common state for all entity types
-          newState = uc.Entities.Sensor.STATES.UNAVAILABLE;
+          newState = uc.SensorStates.Unavailable;
           break;
         default:
           log.warn("Unhandled device state event:", data.state);
@@ -186,7 +188,7 @@ function _addConfiguredDevice(device, connect = true) {
 
       const entityIds = configured.entityIds();
       for (const entityId of entityIds) {
-        const entity = uc.configuredEntities.getEntity(entityId);
+        const entity = driver.getConfiguredEntities().getEntity(entityId);
         if (!entity) {
           continue;
         }
@@ -195,10 +197,10 @@ function _addConfiguredDevice(device, connect = true) {
           continue;
         }
 
-        uc.configuredEntities.updateEntityAttributes(
+        driver.getConfiguredEntities().updateEntityAttributes(
           entityId,
           // hack: state key string is always the same, independent of entity type
-          new Map([[uc.Entities.Sensor.ATTRIBUTES.STATE, newState]])
+          { [uc.SensorAttributes.State]: newState }
         );
       }
     });
@@ -225,11 +227,11 @@ function _registerAvailableEntities(device) {
   const entities = device.entities();
 
   for (const entity of entities) {
-    if (uc.availableEntities.contains(entity.id)) {
-      uc.availableEntities.removeEntity(entity.id);
+    if (driver.getAvailableEntities().contains(entity.id)) {
+      driver.getAvailableEntities().removeEntity(entity.id);
     }
     entity.setCmdHandler(cmdHandler);
-    uc.availableEntities.addEntity(entity);
+    driver.getAvailableEntities().addAvailableEntity(entity);
   }
 
   return true;
@@ -256,8 +258,8 @@ function onDeviceRemoved(device) {
       configured.removeAllListeners();
     });
     configuredDevices.clear();
-    uc.configuredEntities.clear();
-    uc.availableEntities.clear();
+    driver.getConfiguredEntities().clear();
+    driver.getAvailableEntities().clear();
   } else if (configuredDevices.has(device.id)) {
     log.debug("Disconnecting from removed device %s", device.id);
     const configured = configuredDevices.get(device.id);
@@ -270,15 +272,15 @@ function onDeviceRemoved(device) {
 
     const ids = device.entityIds();
     for (const entityId of ids) {
-      uc.configuredEntities.removeEntity(entityId);
-      uc.availableEntities.removeEntity(entityId);
+      driver.getConfiguredEntities().removeEntity(entityId);
+      driver.getAvailableEntities().removeEntity(entityId);
     }
   }
 }
 
 async function main() {
   // load configured devices
-  config.devices.init(uc.configDirPath, onDeviceAdded, onDeviceRemoved);
+  config.devices.init(driver.getConfigDirPath(), onDeviceAdded, onDeviceRemoved);
 
   // Note: device will be moved to configured devices with the subscribe_events request!
   // This will also start the device connection.
@@ -286,9 +288,9 @@ async function main() {
     _addConfiguredDevice(device, false);
   });
 
-  uc.init("driver.json", driverSetupHandler);
+  driver.init("driver.json", driverSetupHandler);
 
-  const info = uc.getDriverVersion();
+  const info = driver.getDriverVersion();
   log.info("Global Caché integration %s started", info.version.driver);
 }
 
