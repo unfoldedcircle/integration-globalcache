@@ -242,7 +242,7 @@ function _registerAvailableEntities(device) {
  * @param {GcDevice} device
  */
 function onDeviceAdded(device) {
-  log.debug("New device added:", device);
+  log.debug("New device added:", JSON.stringify(device));
   _addConfiguredDevice(device, false);
 }
 

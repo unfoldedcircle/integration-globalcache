@@ -276,7 +276,7 @@ async function handleDiscovery(msg) {
  * @return {Promise<uc.SetupAction>} the setup action on how to continue
  */
 async function handleUserDataResponse(msg) {
-  log.debug("Received user input for driver setup.", msg);
+  log.debug("Received user input for driver setup.", JSON.stringify(msg));
 
   for (const uuid in msg.inputValues) {
     // selected by user?
@@ -287,7 +287,7 @@ async function handleUserDataResponse(msg) {
       }
       try {
         const deviceInfo = await retrieveDeviceInfo(device.get("address"));
-        log.info("Device information %s:", uuid, deviceInfo);
+        log.info("Device information %s:", uuid, JSON.stringify(deviceInfo));
         /*
         Device information GC100_000C1E01A875_GlobalCache: DeviceInfo {
           host: '172.16.16.184',
