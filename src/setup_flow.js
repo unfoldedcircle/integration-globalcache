@@ -7,7 +7,7 @@
 
 "use strict";
 
-import uc from "uc-integration-api";
+import * as uc from "@unfoldedcircle/integration-api";
 import { discover, retrieveDeviceInfo } from "gc-unified-lib";
 import { GcDevice, GcIrPort } from "./config.js";
 import * as config from "./config.js";
@@ -16,7 +16,7 @@ import { log } from "./loggers.js";
 
 /**
  * Enumeration of setup steps to keep track of user data responses.
- * @type {{PAIRING_AIRPLAY: number, INIT: number, DEVICE_CHOICE: number, DISCOVER: number, CONFIGURATION_MODE: number, PAIRING_COMPANION: number}}
+ * @type {{INIT: number, CONFIGURATION_MODE: number, DISCOVER: number, DEVICE_CHOICE: number}}
  */
 const SetupSteps = {
   INIT: 0,
@@ -36,21 +36,21 @@ let manualAddress = false;
  * Either start the setup process or handle the provided user input data.
  * @param {uc.setup.SetupDriver} msg the setup driver request object, either DriverSetupRequest,
  *                 UserDataResponse or UserConfirmationResponse
- * @return {Promise<uc.setup.SetupAction>} the setup action on how to continue
+ * @return {Promise<uc.SetupAction>} the setup action on how to continue
  */
 async function driverSetupHandler(msg) {
-  if (msg instanceof uc.setup.DriverSetupRequest) {
+  if (msg instanceof uc.DriverSetupRequest) {
     setupStep = SetupSteps.INIT;
     cfgAddDevice = false;
     return await handleDriverSetup(msg);
   }
-  if (msg instanceof uc.setup.UserConfirmationResponse) {
+  if (msg instanceof uc.UserConfirmationResponse) {
     if (setupStep === SetupSteps.DISCOVER) {
       log.debug("Received user confirmation for starting discovery again");
       return await handleDiscovery(msg);
     }
     log.error("No or invalid user confirmation response was received in step %d: %s", setupStep, msg);
-  } else if (msg instanceof uc.setup.UserDataResponse) {
+  } else if (msg instanceof uc.UserDataResponse) {
     if (setupStep === SetupSteps.CONFIGURATION_MODE && "action" in msg.inputValues) {
       return await handleConfigurationMode(msg);
     }
@@ -61,22 +61,22 @@ async function driverSetupHandler(msg) {
       return await handleUserDataResponse(msg);
     }
     log.error("No or invalid user response was received in step %d: %s", setupStep, msg);
-  } else if (msg instanceof uc.setup.AbortDriverSetup) {
+  } else if (msg instanceof uc.AbortDriverSetup) {
     log.info("Setup was aborted with code: %s", msg.error);
     // TODO abort discovery
     discoveredDevices.clear();
     setupStep = SetupSteps.INIT;
   }
 
-  return new uc.setup.SetupError();
+  return new uc.SetupError();
 }
 
 /**
  * Start driver setup.
  *
  * Initiated by the UC Remote to set up the driver.
- * @param {uc.setup.DriverSetupRequest} msg value(s) of input fields in the first setup screen.
- * @return {Promise<uc.setup.SetupAction>} the setup action on how to continue
+ * @param {uc.DriverSetupRequest} msg value(s) of input fields in the first setup screen.
+ * @return {Promise<uc.SetupAction>} the setup action on how to continue
  */
 async function handleDriverSetup(msg) {
   log.debug("Setting up driver. Setup data:", msg);
@@ -113,7 +113,7 @@ async function handleDriverSetup(msg) {
       dropdownDevices.push({ id: "", label: { en: "---" } });
     }
 
-    return new uc.setup.RequestUserInput(i18all("setup.configuration.title"), [
+    return new uc.RequestUserInput(i18all("setup.configuration.title"), [
       {
         field: { dropdown: { value: dropdownDevices[0].id, items: dropdownDevices } },
         id: "choice",
@@ -143,8 +143,8 @@ async function handleDriverSetup(msg) {
  * - `choice` contains identifier of selected device
  * - `action` contains the selected action identifier
  *
- * @param {UserDataResponse} msg user input data from the configuration mode screen.
- * @return {Promise<RequestUserInput | SetupComplete | SetupError>} the setup action on how to continue
+ * @param {uc.UserDataResponse} msg user input data from the configuration mode screen.
+ * @return {Promise<uc.SetupAction>} the setup action on how to continue
  */
 async function handleConfigurationMode(msg) {
   const action = msg.inputValues.action;
@@ -160,22 +160,22 @@ async function handleConfigurationMode(msg) {
       const choice = msg.inputValues.choice;
       if (!config.devices.remove(choice)) {
         log.warn("Could not remove device from configuration: %s", choice);
-        return new uc.setup.SetupError(uc.setup.IntegrationSetupError.OTHER);
+        return new uc.SetupError(uc.IntegrationSetupError.Other);
       }
       config.devices.store();
-      return new uc.setup.SetupComplete();
+      return new uc.SetupComplete();
     }
     case "reset":
       config.devices.clear(); // triggers device instance removal
       break;
     default:
       log.error("Invalid configuration action: %s", action);
-      return new uc.setup.SetupError(uc.setup.IntegrationSetupError.OTHER);
+      return new uc.SetupError(uc.IntegrationSetupError.Other);
   }
 
   setupStep = SetupSteps.DISCOVER;
 
-  const userInputDiscovery = new uc.setup.RequestUserInput(i18all("setup.discovery.title"), [
+  return new uc.RequestUserInput(i18all("setup.discovery.title"), [
     {
       id: "info",
       label: i18all("setup.discovery.info"),
@@ -191,20 +191,18 @@ async function handleConfigurationMode(msg) {
       label: i18all("setup.discovery.address")
     }
   ]);
-
-  return userInputDiscovery;
 }
 
 /**
- * @param {uc.setup.DriverSetupRequest | UserConfirmationResponse | UserDataResponse} msg value(s) of input fields in the first setup screen.
- * @return {Promise<SetupAction>}
+ * @param {uc.DriverSetupRequest | uc.UserConfirmationResponse | uc.UserDataResponse} msg value(s) of input fields in the first setup screen.
+ * @return {Promise<uc.SetupAction>}
  */
 async function handleDiscovery(msg) {
   // await uc.driverSetupProgress(wsHandle); // TODO do we need add an event to send async progress notifications?
   manualAddress = false;
   const checkBoxes = [];
 
-  if (msg instanceof uc.setup.UserDataResponse && msg.inputValues.address) {
+  if (msg instanceof uc.UserDataResponse && msg.inputValues.address) {
     if (msg.inputValues.address.length > 0) {
       log.debug("Starting manual driver setup for: %s", msg.inputValues.address);
       manualAddress = true;
@@ -231,7 +229,7 @@ async function handleDiscovery(msg) {
         });
       } catch (e) {
         log.warn("Failed to connect to device", e);
-        return new uc.setup.SetupError(uc.setup.SetupError.CONNECTION_REFUSED); // no better error at the moment :-(
+        return new uc.SetupError(uc.IntegrationSetupError.ConnectionRefused); // no better error at the moment :-(
       }
     }
   }
@@ -262,23 +260,23 @@ async function handleDiscovery(msg) {
 
   if (checkBoxes.length === 0) {
     log.info("Could not discover any new devices");
-    return new uc.setup.RequestUserConfirmation(
+    return new uc.RequestUserConfirmation(
       i18all("setup.discovery_failed.title"),
       i18all("setup.discovery_failed.header")
     );
   }
 
   setupStep = SetupSteps.DEVICE_CHOICE;
-  return new uc.setup.RequestUserInput("Select your Global Caché products", checkBoxes);
+  return new uc.RequestUserInput("Select your Global Caché products", checkBoxes);
 }
 
 /**
  *
- * @param {uc.setup.UserDataResponse} msg
- * @return {Promise<uc.setup.SetupAction>} the setup action on how to continue
+ * @param {uc.UserDataResponse} msg
+ * @return {Promise<uc.SetupAction>} the setup action on how to continue
  */
 async function handleUserDataResponse(msg) {
-  log.debug("Received user input for driver setup.", msg);
+  log.debug("Received user input for driver setup.", JSON.stringify(msg));
 
   for (const uuid in msg.inputValues) {
     // selected by user?
@@ -289,7 +287,7 @@ async function handleUserDataResponse(msg) {
       }
       try {
         const deviceInfo = await retrieveDeviceInfo(device.get("address"));
-        log.info("Device information %s:", uuid, deviceInfo);
+        log.info("Device information %s:", uuid, JSON.stringify(deviceInfo));
         /*
         Device information GC100_000C1E01A875_GlobalCache: DeviceInfo {
           host: '172.16.16.184',
@@ -315,12 +313,12 @@ async function handleUserDataResponse(msg) {
         config.devices.addOrUpdate(gcDevice);
       } catch (e) {
         log.error("Failed to retrieve device information for %s.", uuid, e);
-        return new uc.setup.SetupError(uc.setup.SetupError.OTHER);
+        return new uc.SetupError(uc.IntegrationSetupError.Other);
       }
     }
   }
 
-  return new uc.setup.SetupComplete();
+  return new uc.SetupComplete();
 }
 
 export { driverSetupHandler };

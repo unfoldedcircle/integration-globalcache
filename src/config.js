@@ -7,7 +7,7 @@
 
 import fs from "fs";
 import path from "path";
-import uc from "uc-integration-api";
+import * as uc from "@unfoldedcircle/integration-api";
 import { IrPortMode } from "gc-unified-lib/src/models.js";
 import { log } from "./loggers.js";
 
@@ -73,16 +73,10 @@ class GcDevice {
         case IrPortMode.IRTRIPORT:
         case IrPortMode.IRTRIPORT_BLASTER: {
           if (!emitterEntity) {
-            emitterEntity = new uc.Entities.Entity(
-              this._idForIR(),
-              this.name + " IR emitter",
-              "ir_emitter",
-              [],
-              new Map([[uc.Entities.Remote.ATTRIBUTES.STATE, uc.Entities.Remote.STATES.UNKNOWN]]),
-              undefined,
-              null,
-              undefined
-            );
+            // TODO add "ir_emitter" to EntityType enum
+            emitterEntity = new uc.Entity(this._idForIR(), this.name + " IR emitter", "ir_emitter", {
+              attributes: { [uc.RemoteAttributes.State]: uc.RemoteStates.Unknown }
+            });
           }
           irOutputPorts.push({ id: `${port.module}:${port.port}`, name: port.name });
           break;
