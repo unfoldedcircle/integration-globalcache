@@ -9,13 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 _Changes in the next release_
 
+---
+
+## 0.1.2 - 2026-07-01
 ### Changed
 - Update packages.
 - Update Node.js runtime to 22.22
 - Add GitHub dependabot configuration for npm.
 - Update GitHub actions.
-
----
 
 ## 0.1.1 - 2024-09-28
 ### Fixed
