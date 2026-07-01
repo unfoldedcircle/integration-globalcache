@@ -11,6 +11,7 @@ _Changes in the next release_
 
 ### Changed
 - Update packages.
+- Update Node.js runtime to 22.22
 
 ---
 
