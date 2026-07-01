@@ -23,7 +23,7 @@
     "@unfoldedcircle/integration-api": "^v0.5.0"
   },
   "devDependencies": {
-    "ava": "^6.4.1",
+    "ava": "^8.0.1",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "9.1.0",
     "eslint-config-semistandard": "^17.0.0",
